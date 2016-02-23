@@ -70,7 +70,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         return 'Heat infra driver'
 
     @log.log
-    def create_device_template_pre(self, plugin, context, device_template):
+    def create_device_template_pre(self, plugin, context, device_template):  #update (name, template_name), description, service_type
         device_template_dict = device_template['device_template']
         vnfd_yaml = device_template_dict['attributes'].get('vnfd')
         if vnfd_yaml is None:
@@ -79,17 +79,17 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         vnfd_dict = yaml.load(vnfd_yaml)
         KEY_LIST = (('name', 'template_name'), ('description', 'description'))
 
-        device_template_dict.update(
+        device_template_dict.update(    #meaning: if key is empty in device_template_dict
             dict((key, vnfd_dict[vnfd_key]) for (key, vnfd_key) in KEY_LIST
-                 if ((key not in device_template_dict or
-                      device_template_dict[key] == '') and
-                     vnfd_key in vnfd_dict and
-                     vnfd_dict[vnfd_key] != '')))
+                 if ((key not in device_template_dict or      # key is empty
+                      device_template_dict[key] == '') and    # value is empty
+                     vnfd_key in vnfd_dict and                # key is available
+                     vnfd_dict[vnfd_key] != '')))             # value is available
 
-        service_types = vnfd_dict.get('service_properties', {}).get('type', [])
+        service_types = vnfd_dict.get('service_properties', {}).get('type', [])                #type=['firewall', 'nat']
         if service_types:
             device_template_dict.setdefault('service_types', []).extend(
-                [{'service_type': service_type}
+                [{'service_type': service_type}              # service_types includes values like that 'service_type': service_type
                  for service_type in service_types])
         for vdu in vnfd_dict.get('vdus', {}).values():
             mgmt_driver = vdu.get('mgmt_driver')
@@ -159,6 +159,46 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                                  0, 'ip_address']
                 }
             }
+    @log.log
+    def _process_vdu_ceilometer_alarm_high(self, vdu_id, vdu_dict, properties,
+                                        template_dict):
+        def make_alarm_high():
+            high_alarm_dict = {
+                'type': 'OS::Ceilometer::Alarm',
+                'properties': {
+                    'description': 'Scale-up',
+                    'meter_name': 'cpu_util',
+                    'statistic': 'avg',
+                    'period': 60,
+                    'evaluation_periods': 1,
+                    'threshold': 50,
+                    'alarm_actions': {
+                            'get_attr': ['web_server_scaleup_policy','alarm_url']},
+                    'matching_metadata': {
+                             'metadata.user_metadata.stack': {'get_alarm': 'OS::stack_id'}},
+                    'comparison_operator': 'gt'
+                }
+            }
+    @log.log
+    def _process_vdu_ceilometer_alarm_low(self, vdu_id, vdu_dict, properties,
+                                        template_dict):
+        def make_alarm_low():
+            low_alarm_dict = {
+                'type': 'OS::Ceilometer::Alarm',
+                'properties': {
+                    'description': 'Scale-down',
+                    'meter_name': 'cpu_util',
+                    'statistic': 'avg',
+                    'period': 600,
+                    'evaluation_periods': 1,
+                    'threshold': 15,
+                    'alarm_actions': {
+                            'get_attr': ['web_server_scaleup_policy','alarm_url']},
+                    'matching_metadata': {
+                             'metadata.user_metadata.stack': {'get_alarm': 'OS::stack_id'}},
+                    'comparison_operator': 'lt'
+                }
+            }
 
         def handle_port_creation(network_param, ip_list=[],
                                  mgmt_port=False):
@@ -219,7 +259,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         if vnfd_yaml is not None:
             assert 'template' not in fields
             assert 'template_url' not in fields
-            template_dict = yaml.load(HEAT_TEMPLATE_BASE)
+            template_dict = yaml.load(HEAT_TEMPLATE_BASE)      # This is heat template
             outputs_dict = {}
             template_dict['outputs'] = outputs_dict
 
@@ -237,8 +277,8 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
 
             monitoring_dict = {'vdus': {}}
 
-            for vdu_id, vdu_dict in vnfd_dict.get('vdus', {}).items():
-                template_dict.setdefault('resources', {})[vdu_id] = {
+            for vdu_id, vdu_dict in vnfd_dict.get('vdus', {}).items():     #vdu_id is a subkey of 'vdus' in vnfd_dict
+                template_dict.setdefault('resources', {})[vdu_id] = {    # 'resource' is a subkey of vdu_id
                     "type": "OS::Nova::Server"
                 }
                 resource_dict = template_dict['resources'][vdu_id]
@@ -280,12 +320,34 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                                                      {
                                                          'failure': 'respawn'
                                                      }}}
-                    vdu_dict.pop('failure_policy')
+                    vdu_dict.pop('failure_policy')   # delete 'failure_policy' in vdu_dict and replace with 'monitoring' policy (change vdu_dict)
+                 # my code is here
+                if monitoring_policy == 'cms':
+                    if failure_policy == 'overload':
+                        vdu_dict['monitoring_policy'] = {'cms': {
+                                                             'actions': {
+                                                                'failure': 'overload'
 
+                                                    }}}
+                        vdu_dict.pop('failure_policy')
+                        self._process_vdu_ceilometer_alarm_high(vdu_id, vdu_dict,
+                                                                properties,
+                                                                template_dict)
+                    elif failure_policy == 'lowload':
+                        vdu_dict['monitoring_policy'] = {'cms': {
+                                                             'actions': {
+                                                                'failure': 'lowload'
+
+                                                    }}}
+                        vdu_dict.pop('failure_policy')
+                        self._process_vdu_ceilometer_alarm_low(vdu_id, vdu_dict,
+                                                               properties,
+                                                               template_dict)
+                #-------------------------------------------------
                 if monitoring_policy != 'noop':
                     monitoring_dict['vdus'][vdu_id] = \
                         vdu_dict['monitoring_policy']
-
+                # Assign the value of vdu_dict['monitoring_policy'] to monitoring_dict['vdus'][vdu_id]
                 # to pass necessary parameters to plugin upwards.
                 for key in ('service_type',):
                     if key in vdu_dict:
