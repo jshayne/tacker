@@ -205,15 +205,13 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                     'evaluation_periods': 1,
                     'threshold': 50,
                     'alarm_actions': {
-                            'get_attr': ['web_server_scaleup_policy','alarm_url']},
+                            'get_attr': ['web_server_scaleup_policy', 'alarm_url']},
                     'matching_metadata': {
                              'metadata.user_metadata.stack': {'get_alarm': 'OS::stack_id'}},
                     'comparison_operator': 'gt'
                 }
             }
-    @log.log
-    def _process_vdu_ceilometer_alarm_low(self, vdu_id, vdu_dict, properties,
-                                        template_dict):
+            return high_alarm_dict
         def make_alarm_low():
             low_alarm_dict = {
                 'type': 'OS::Ceilometer::Alarm',
@@ -225,12 +223,20 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                     'evaluation_periods': 1,
                     'threshold': 15,
                     'alarm_actions': {
-                            'get_attr': ['web_server_scaleup_policy','alarm_url']},
+                            'get_attr': ['web_server_scaleup_policy', 'alarm_url']},
                     'matching_metadata': {
                              'metadata.user_metadata.stack': {'get_alarm': 'OS::stack_id'}},
                     'comparison_operator': 'lt'
                 }
             }
+            return low_alarm_dict
+        def alarm_handler():
+
+            template_dict('cpu_alarm_high')
+            template_dict('cpu_alarm_low')
+
+
+
     @log.log
     def create(self, plugin, context, device):
         LOG.debug(_('device %s'), device)
@@ -282,7 +288,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                 }
                 resource_dict = template_dict['resources'][vdu_id]
                 KEY_LIST = (('image', 'vm_image'),
-                            ('flavor', 'instance_type'))
+                            ('flavor', 'instance_type'))      # Map between flavor (Heat) and instance type, image (heat) and vm_image
                 resource_dict['properties'] = {}
                 properties = resource_dict['properties']
                 for (key, vdu_key) in KEY_LIST:
