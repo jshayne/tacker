@@ -159,6 +159,38 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                                  0, 'ip_address']
                 }
             }
+        def handle_port_creation(network_param, ip_list=[],
+                                 mgmt_port=False):
+            port = '%s-%s-port' % (vdu_id, network_param['network'])
+            port_dict = make_port_dict()
+            if mgmt_port:
+                make_mgmt_outputs_dict(port)
+            for ip in ip_list:
+                port_dict['properties']['fixed_ips'].append({"ip_address": ip})
+            port_dict['properties'].update(network_param)
+            template_dict['resources'][port] = port_dict
+            return port
+
+        networks_list = []
+        outputs_dict = template_dict['outputs']
+        properties['networks'] = networks_list
+        for network_param in vdu_dict[
+                'network_interfaces'].values():
+            port = None
+            if 'addresses' in network_param:
+                ip_list = network_param.pop('addresses', [])
+                if not isinstance(ip_list, list):
+                    raise vnfm.IPAddrInvalidInput()
+                mgmt_flag = network_param.pop('management', False)
+                port = handle_port_creation(network_param, ip_list, mgmt_flag)
+            if network_param.pop('management', False):
+                port = handle_port_creation(network_param, [], True)
+            if port is not None:
+                network_param = {
+                    'port': {'get_resource': port}
+                }
+            networks_list.append(dict(network_param))
+
     @log.log
     def _process_vdu_ceilometer_alarm_high(self, vdu_id, vdu_dict, properties,
                                         template_dict):
@@ -199,39 +231,6 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                     'comparison_operator': 'lt'
                 }
             }
-
-        def handle_port_creation(network_param, ip_list=[],
-                                 mgmt_port=False):
-            port = '%s-%s-port' % (vdu_id, network_param['network'])
-            port_dict = make_port_dict()
-            if mgmt_port:
-                make_mgmt_outputs_dict(port)
-            for ip in ip_list:
-                port_dict['properties']['fixed_ips'].append({"ip_address": ip})
-            port_dict['properties'].update(network_param)
-            template_dict['resources'][port] = port_dict
-            return port
-
-        networks_list = []
-        outputs_dict = template_dict['outputs']
-        properties['networks'] = networks_list
-        for network_param in vdu_dict[
-                'network_interfaces'].values():
-            port = None
-            if 'addresses' in network_param:
-                ip_list = network_param.pop('addresses', [])
-                if not isinstance(ip_list, list):
-                    raise vnfm.IPAddrInvalidInput()
-                mgmt_flag = network_param.pop('management', False)
-                port = handle_port_creation(network_param, ip_list, mgmt_flag)
-            if network_param.pop('management', False):
-                port = handle_port_creation(network_param, [], True)
-            if port is not None:
-                network_param = {
-                    'port': {'get_resource': port}
-                }
-            networks_list.append(dict(network_param))
-
     @log.log
     def create(self, plugin, context, device):
         LOG.debug(_('device %s'), device)
