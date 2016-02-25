@@ -197,38 +197,25 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         def make_alarm_high():
             high_alarm_dict = {
                 'type': 'OS::Ceilometer::Alarm',
-                'properties': {
-                    'description': 'Scale-up',
-                    'meter_name': 'cpu_util',
-                    'statistic': 'avg',
-                    'period': 60,
-                    'evaluation_periods': 1,
-                    'threshold': 50,
-                    'alarm_actions': {
-                            'get_attr': ['web_server_scaleup_policy', 'alarm_url']},
-                    'matching_metadata': {
-                             'metadata.user_metadata.stack': {'get_alarm': 'OS::stack_id'}},
-                    'comparison_operator': 'gt'
-                }
+                'properties': {'description': 'scale-up'}
             }
+            high_alarm_dict['properties'].setdefault('meter', 'cpu_util')
+            high_alarm_dict['properties']['statistic']=vdu_dict['monitoring_policy']
+
+
+
+
             return high_alarm_dict
         def make_alarm_low():
             low_alarm_dict = {
                 'type': 'OS::Ceilometer::Alarm',
-                'properties': {
-                    'description': 'Scale-down',
-                    'meter_name': 'cpu_util',
-                    'statistic': 'avg',
-                    'period': 600,
-                    'evaluation_periods': 1,
-                    'threshold': 15,
-                    'alarm_actions': {
-                            'get_attr': ['web_server_scaleup_policy', 'alarm_url']},
-                    'matching_metadata': {
-                             'metadata.user_metadata.stack': {'get_alarm': 'OS::stack_id'}},
-                    'comparison_operator': 'lt'
+                'properties': {'description': 'scale-down'}
                 }
-            }
+            low_alarm_dict['properties'].setdefault('meter', 'cpu_util')
+
+
+
+
             return low_alarm_dict
         def alarm_handler():
 
@@ -292,9 +279,9 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                 resource_dict['properties'] = {}
                 properties = resource_dict['properties']
                 for (key, vdu_key) in KEY_LIST:
-                    properties[key] = vdu_dict[vdu_key]
+                    properties[key] = vdu_dict[vdu_key]       # how to translate from vnd_dict to heat
                 if 'network_interfaces' in vdu_dict:
-                    self._process_vdu_network_interfaces(vdu_id, vdu_dict,
+                    self._process_vdu_network_interfaces(vdu_id, vdu_dict,     #properties is used here
                                                          properties,
                                                          template_dict)
                 if 'user_data' in vdu_dict and 'user_data_format' in vdu_dict:
@@ -320,34 +307,34 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                 # Convert the old monitoring specification to the new format
                 # This should be removed after Mitaka
                 if monitoring_policy == 'ping' and failure_policy == 'respawn':
-                    vdu_dict['monitoring_policy'] = {'ping': {
+                    vdu_dict['monitoring_policy'] = {'ping': {                    #Just change vnd_dict format
                                                      'actions':
                                                      {
                                                          'failure': 'respawn'
                                                      }}}
                     vdu_dict.pop('failure_policy')   # delete 'failure_policy' in vdu_dict and replace with 'monitoring' policy (change vdu_dict)
                  # my code is here
-                #if monitoring_policy == 'cms':
-                #    if failure_policy == 'overload':
-                #        vdu_dict['monitoring_policy'] = {'cms': {
-                #                                             'actions': {
-                #                                                'failure': 'overload'
-                #
-                #                                    }}}
-                #        vdu_dict.pop('failure_policy')
-                #        self._process_vdu_ceilometer_alarm_high(vdu_id, vdu_dict,
-                #                                                properties,
-                #                                                template_dict)
-                #    elif failure_policy == 'lowload':
-                #        vdu_dict['monitoring_policy'] = {'cms': {
-                #                                             'actions': {
-                #                                                'failure': 'lowload'
-                #
-                #                                    }}}
-                #        vdu_dict.pop('failure_policy')
-                #        self._process_vdu_ceilometer_alarm_low(vdu_id, vdu_dict,
-                #                                               properties,
-                #                                               template_dict)
+                if monitoring_policy == 'cms':
+                    if failure_policy == 'overload':
+                        vdu_dict['monitoring_policy'] = {'cms': {
+                                                             'actions': {
+                                                                'failure': 'overload'
+
+                                                    }}}
+                        vdu_dict.pop('failure_policy')
+                        self._process_vdu_ceilometer_alarm_high(vdu_id, vdu_dict,
+                                                                properties,
+                                                                template_dict)
+                    elif failure_policy == 'lowload':
+                        vdu_dict['monitoring_policy'] = {'cms': {
+                                                             'actions': {
+                                                                'failure': 'lowload'
+
+                                                    }}}
+                        vdu_dict.pop('failure_policy')
+                        self._process_vdu_ceilometer_alarm_low(vdu_id, vdu_dict,
+                                                               properties,
+                                                               template_dict)
                 #-------------------------------------------------
                 if monitoring_policy != 'noop':
                     monitoring_dict['vdus'][vdu_id] = \
