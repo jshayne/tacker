@@ -260,20 +260,20 @@ class ActionRespawnHeat(ActionPolicy):
             new_device_id = device_id + '-RESPAWN-' + failure_count_str                      # good one I can see
             attributes = device_dict['attributes'].copy()
             attributes['dead_device_id'] = device_id
-            new_device = {'id': new_device_id, 'attributes': attributes}
+            new_device = {'id': new_device_id, 'attributes': attributes}                     #copy attributes
             for key in ('tenant_id', 'template_id', 'name'):
                 new_device[key] = device_dict[key]
             LOG.debug(_('new_device %s'), new_device)
 
             # kill heat stack
             heatclient = heat.HeatClient(None)
-            heatclient.delete(device_dict['instance_id'])
+            heatclient.delete(device_dict['instance_id'])                                    # finally, i found it
 
             # TODO(sripriya): sleep timer has been provided as a temporary
             # workaround for the nova neutron port still in use issue. Need
             # to come up with a better fix for the issue
-            LOG.debug('Sleeping for 10 seconds before initiating respawn')
-            time.sleep(10)
+            LOG.debug('Sleeping for 10 seconds before initiating respawn')                   #  New comments
+            time.sleep(10)                                                                   # How respawn works
 
             # keystone v2.0 specific
             authtoken = CONF.keystone_authtoken
