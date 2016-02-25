@@ -257,7 +257,7 @@ class ActionRespawnHeat(ActionPolicy):
             attributes['dead_instance_id_' + failure_count_str] = device_dict[
                 'instance_id']
 
-            new_device_id = device_id + '-RESPAWN-' + failure_count_str
+            new_device_id = device_id + '-RESPAWN-' + failure_count_str                      # good one I can see
             attributes = device_dict['attributes'].copy()
             attributes['dead_device_id'] = device_id
             new_device = {'id': new_device_id, 'attributes': attributes}
