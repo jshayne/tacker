@@ -192,7 +192,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
             networks_list.append(dict(network_param))
 
     @log.log
-    def _process_vdu_ceilometer_alarm_high(self, vdu_id, vdu_dict, properties,
+    def _process_vdu_ceilometer_alarm(self, vdu_id, vdu_dict, properties,
                                         template_dict):
         def make_alarm_high():
             high_alarm_dict = {
@@ -231,9 +231,6 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         monitoring_policy = vdu_dict['monitoring_policy']
         actions = monitoring_policy['actions']
         alarm_handler(monitoring_policy, actions)
-
-
-
 
     @log.log
     def create(self, plugin, context, device):
@@ -326,26 +323,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                     vdu_dict.pop('failure_policy')   # delete 'failure_policy' in vdu_dict and replace with 'monitoring' policy (change vdu_dict)
                  # my code is here
                 if monitoring_policy == 'cpu_util':
-                    if failure_policy == 'overload':
-                        vdu_dict['monitoring_policy'] = {'cms': {
-                                                             'actions': {
-                                                                'failure': 'overload'
-
-                                                    }}}
-                        vdu_dict.pop('failure_policy')
-                        self._process_vdu_ceilometer_alarm_high(vdu_id, vdu_dict,
-                                                                properties,
-                                                                template_dict)
-                    elif failure_policy == 'lowload':
-                        vdu_dict['monitoring_policy'] = {'cms': {
-                                                             'actions': {
-                                                                'failure': 'lowload'
-
-                                                    }}}
-                        vdu_dict.pop('failure_policy')
-                        self._process_vdu_ceilometer_alarm_low(vdu_id, vdu_dict,
-                                                               properties,
-                                                               template_dict)
+                    self._process_vdu_ceilometer_alarm(self, vdu_id, vdu_dict, properties, template_dict)
                 #-------------------------------------------------
                 if monitoring_policy != 'noop':
                     monitoring_dict['vdus'][vdu_id] = \
