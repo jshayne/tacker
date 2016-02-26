@@ -200,11 +200,12 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                 'properties': {'description': 'scale-up'}
             }
             high_alarm_dict['properties'].setdefault('meter', 'cpu_util')
-            high_alarm_dict['properties']['statistic']=vdu_dict['monitoring_policy']
-
-
-
-
+            monitoring_params = vdu_dict['monitoring_policy']['cpu_util'].get('monitoring_params')
+            high_alarm_dict['properties']['statistic'] = monitoring_params.get('evaluation_periods')
+            high_alarm_dict['properties']['threshold'] = monitoring_params.get('threshold')
+            high_alarm_dict['properties']['alam_actions'] = {'get_attr':['web_server_scaledown_policy', 'alarm_url']}
+            high_alarm_dict['properties']['matching_data'] = {'metadata.user_metadata.stack': {'get_param': 'OS::stack_id'}}
+            high_alarm_dict['properties']['comparison_operator'] = 'gt'
             return high_alarm_dict
         def make_alarm_low():
             low_alarm_dict = {
@@ -212,15 +213,25 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                 'properties': {'description': 'scale-down'}
                 }
             low_alarm_dict['properties'].setdefault('meter', 'cpu_util')
-
-
-
-
+            monitoring_params = vdu_dict['monitoring_policy']['cpu_util'].get('monitoring_params')
+            low_alarm_dict['properties']['statistic'] = monitoring_params.get('evaluation_periods')
+            low_alarm_dict['properties']['threshold'] = monitoring_params.get('threshold')
+            low_alarm_dict['properties']['alam_actions'] = {'get_attr':['web_server_scaledown_policy', 'alarm_url']}
+            low_alarm_dict['properties']['matching_data'] = {'metadata.user_metadata.stack': {'get_param': 'OS::stack_id'}}
+            low_alarm_dict['properties']['comparison_operator'] = 'lt'
             return low_alarm_dict
-        def alarm_handler():
+        def alarm_handler(monitoring_policy, actions):
+            high_alarm=make_alarm_high()
+            low_alrm = make_alarm_low()
+            # for act in actions.get('failure_policy','noop'):
+            if actions.get('failure_policy') == 'scale-up':
+                template_dict['cpu_alarm_high'] = high_alarm
+            elif actions.get('failure_policy') == 'scale-down':
+                template_dict['cpu_alarm_low'] = low_alrm
+        monitoring_policy = vdu_dict['monitoring_policy']
+        actions = monitoring_policy['actions']
+        alarm_handler(monitoring_policy, actions)
 
-            template_dict('cpu_alarm_high')
-            template_dict('cpu_alarm_low')
 
 
 
@@ -314,7 +325,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                                                      }}}
                     vdu_dict.pop('failure_policy')   # delete 'failure_policy' in vdu_dict and replace with 'monitoring' policy (change vdu_dict)
                  # my code is here
-                if monitoring_policy == 'cms':
+                if monitoring_policy == 'cpu_util':
                     if failure_policy == 'overload':
                         vdu_dict['monitoring_policy'] = {'cms': {
                                                              'actions': {
