@@ -33,7 +33,7 @@ vdus:
           evaluation_periods: 1
           threshold: 15
         actions:
-          overload: scale-down
+          failure_policy: scale-down
 
     config:
       param0: key0
