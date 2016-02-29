@@ -203,7 +203,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
             monitoring_params = vdu_dict['monitoring_policy']['cpu_util'].get('monitoring_params')
             high_alarm_dict['properties']['statistic'] = monitoring_params.get('evaluation_periods')
             high_alarm_dict['properties']['threshold'] = monitoring_params.get('threshold')
-            high_alarm_dict['properties']['alam_actions'] = {'get_attr':['web_server_scaledown_policy', 'alarm_url']}
+            high_alarm_dict['properties']['alarm_actions'] = {'get_attr', ['web_server_scaledown_policy', 'alarm_url']}
             high_alarm_dict['properties']['matching_data'] = {'metadata.user_metadata.stack': {'get_param': 'OS::stack_id'}}
             high_alarm_dict['properties']['comparison_operator'] = 'gt'
             return high_alarm_dict
@@ -216,7 +216,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
             monitoring_params = vdu_dict['monitoring_policy']['cpu_util'].get('monitoring_params')
             low_alarm_dict['properties']['statistic'] = monitoring_params.get('evaluation_periods')
             low_alarm_dict['properties']['threshold'] = monitoring_params.get('threshold')
-            low_alarm_dict['properties']['alam_actions'] = {'get_attr':['web_server_scaledown_policy', 'alarm_url']}
+            low_alarm_dict['properties']['alarm_actions'] = {'get_attr', ['web_server_scaledown_policy', 'alarm_url']}
             low_alarm_dict['properties']['matching_data'] = {'metadata.user_metadata.stack': {'get_param': 'OS::stack_id'}}
             low_alarm_dict['properties']['comparison_operator'] = 'lt'
             return low_alarm_dict
