@@ -494,7 +494,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
 class HeatClient(object):
     def __init__(self, context, password=None):
         # context, password are unused
-        self.stacks = clients.OpenstackClients().heat.stacks
+        self.stacks = clients.OpenstackClients().heat.stacks        # push configuration in Heat
 
     def create(self, fields):
         fields = fields.copy()
