@@ -243,7 +243,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                       if key in attributes)
         for key in ('files', 'parameters'):
             if key in attributes:
-                fields[key] = jsonutils.loads(attributes.pop(key))
+                fields[key] = jsonutils.loads(attributes.pop(key))            # Convert from json to dict
 
         # overwrite parameters with given dev_attrs for device creation
         dev_attrs = device['attributes'].copy()
