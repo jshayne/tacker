@@ -209,7 +209,7 @@ class ActionPolicy(object):
     def execute_action(cls, plugin, device_dict):
         pass
 
-
+# Here is where Tacker perform respone VNF
 @ActionPolicy.register('respawn')
 class ActionRespawn(ActionPolicy):
     @classmethod
