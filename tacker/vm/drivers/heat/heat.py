@@ -278,7 +278,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
             monitoring_dict = {'vdus': {}}
 
             for vdu_id, vdu_dict in vnfd_dict.get('vdus', {}).items():     #vdu_id is a subkey of 'vdus' in vnfd_dict
-                template_dict.setdefault('resources', {})[vdu_id] = {    # 'resource' is a subkey of vdu_id
+                template_dict.setdefault('resources', {})[vdu_id] = {    # 'resource' is a key of vdu_id
                     "type": "OS::Nova::Server"
                 }
                 resource_dict = template_dict['resources'][vdu_id]
