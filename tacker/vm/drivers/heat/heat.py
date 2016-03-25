@@ -233,7 +233,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         alarm_handler(monitoring_policy, actions)
 
     @log.log
-    def create(self, plugin, context, device):
+    def create(self, plugin, context, detexvice):
         LOG.debug(_('device %s'), device)
         heatclient_ = HeatClient(context)
         attributes = device['device_template']['attributes'].copy()
@@ -273,7 +273,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                         )
             for (key, vnfd_key) in KEY_LIST:
                 if vnfd_key in vnfd_dict:
-                    template_dict[key] = vnfd_dict[vnfd_key]
+                    template_dict[key] = vnfd_dict[vnfd_key]       # Move information from vnfd_dict to template_dict(Heat)
 
             monitoring_dict = {'vdus': {}}
 
