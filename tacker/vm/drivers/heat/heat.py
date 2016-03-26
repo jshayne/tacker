@@ -233,7 +233,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
         alarm_handler(monitoring_policy, actions)
 
     @log.log
-    def create(self, plugin, context, detexvice):
+    def create(self, plugin, context, device):
         LOG.debug(_('device %s'), device)
         heatclient_ = HeatClient(context)
         attributes = device['device_template']['attributes'].copy()
@@ -247,7 +247,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
 
         # overwrite parameters with given dev_attrs for device creation
         dev_attrs = device['attributes'].copy()
-        fields.update(dict((key, dev_attrs.pop(key)) for key
+        fields.update(dict((key, dev_attrs.pop(key)) for key                  # update
                       in ('stack_name', 'template_url', 'template')
                       if key in dev_attrs))
         for key in ('files', 'parameters'):
@@ -289,7 +289,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
                 for (key, vdu_key) in KEY_LIST:
                     properties[key] = vdu_dict[vdu_key]       # how to translate from vnd_dict to heat
                 if 'network_interfaces' in vdu_dict:
-                    self._process_vdu_network_interfaces(vdu_id, vdu_dict,     #properties is used here
+                    self._process_vdu_network_interfaces(vdu_id, vdu_dict,     #properties is used here. Actually, final result is  that template_dict is updated
                                                          properties,
                                                          template_dict)
                 if 'user_data' in vdu_dict and 'user_data_format' in vdu_dict:
