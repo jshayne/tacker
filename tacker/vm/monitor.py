@@ -86,7 +86,7 @@ class VNFMonitor(object):
                     if hosting_vnf.get('dead', False):
                         continue
 
-                    self.run_monitor(hosting_vnf)
+                    self.run_monitor(hosting_vnf)  # Just monitor vnfs which is still alive
 
     @staticmethod
     def to_hosting_vnf(device_dict, action_cb):
