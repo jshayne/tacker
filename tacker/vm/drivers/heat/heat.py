@@ -349,7 +349,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
             name = (__name__ + '_' + self.__class__.__name__ + '-' +
                     device['id'])
             if device['attributes'].get('failure_count'):
-                name += ('-%s') % str(device['attributes']['failure_count'])
+                name += ('-%s') % str(device['attributes']['failure_count'])   #Failure count
             fields['stack_name'] = name
 
         # service context is ignored
@@ -357,7 +357,7 @@ class DeviceHeat(abstract_driver.DeviceAbstractDriver):
 
         LOG.debug(_('fields: %s'), fields)
         LOG.debug(_('template: %s'), fields['template'])
-        stack = heatclient_.create(fields)
+        stack = heatclient_.create(fields)     # Key node: the information of vnfd is put here.Actually, field is key not template_dict
         return stack['stack']['id']
 
     def create_wait(self, plugin, context, device_dict, device_id):
