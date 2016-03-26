@@ -215,7 +215,7 @@ class ActionRespawn(ActionPolicy):
     @classmethod
     def execute_action(cls, plugin, device_dict):
         LOG.error(_('device %s dead'), device_dict['id'])
-        if plugin._mark_device_dead(device_dict['id']):
+        if plugin._mark_device_dead(device_dict['id']):        # just check if any dead vm is in the db or not
             plugin._vnf_monitor.mark_dead(device_dict['id'])
 
             attributes = device_dict['attributes'].copy()
