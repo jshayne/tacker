@@ -156,7 +156,7 @@ class DeviceNova(abstract_driver.DeviceAbstractDriver):
         LOG.debug(_('port %s'), port)
         return port['id']
 
-    def create(self, plugin, context, device):
+    def create(self, plugin, context, device):    # nova creates new instance here
         # typical required arguments are
         # 'name': name string
         # 'image': uuid
